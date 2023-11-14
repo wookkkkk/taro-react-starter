@@ -1,4 +1,5 @@
 import Taro, { EventChannel } from '@tarojs/taro'
+import { Helper } from '@/utils'
 
 interface IRouterOptions<T = any> {
   url: string
@@ -20,23 +21,14 @@ type RouterType = 'navigateTo' | 'redirectTo' | 'switchTab' | 'reLaunch' | 'navi
 /**
  * 路由跳转处理
  */
-function handleRouter(url: string, type: RouterType, options: RouterOptions) {
-  if (authRoutes.includes(url)) {
-    if (process.env.TARO_ENV === 'weapp') {
-      Taro.getBackgroundFetchToken({
-        success: (res) => {
-          console.log(res)
-          navigate(type, options)
-        },
-        fail: (err) => {
-          console.error(err)
-          // 如果要跳转的页面是需要登录的，但是当前登录状态无效
-          // TODO
-        },
-      })
-    } else {
-      navigate(type, options)
+function handleRouter(urlKey: string, type: RouterType, options: RouterOptions) {
+  const token = Helper.getToken()
+  if (authRoutes.includes(urlKey)) {
+    if (!token) {
+      // TODO 补充自己的业务逻辑
+      return
     }
+    navigate(type, options)
   } else {
     navigate(type, options)
   }
@@ -68,7 +60,11 @@ class Router {
    */
   private middleware(type: RouterType, options: RouterOptions) {
     let { url = '', data = {}, events, ...rest } = options
-    const key = url.replace(/^\/*(.*?)(\/*)$/g, '$1') // 单独存一份url,待会要用
+    // 单独存一份url,待会要用
+    const key = url
+      .split('/')
+      .filter((e) => e !== '')
+      .join('/')
     try {
       if (type === 'navigateBack') {
         Taro.navigateBack(rest)
@@ -77,7 +73,7 @@ class Router {
           throw Error('无效的路由')
         }
         // 不是tabbar的话就给路由拼上参数
-        options.url = type === 'switchTab' ? key : key + '?' + new URLSearchParams(data).toString()
+        options.url = type === 'switchTab' ? `/${key}` : `/${key}` + '?' + new URLSearchParams(data).toString()
         handleRouter(key, type, options)
       }
     } catch (error) {

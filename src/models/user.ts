@@ -5,7 +5,7 @@ import { setStorageSync, getStorageSync, removeStorageSync } from '@tarojs/taro'
 import createSelectors from './selectors'
 import { StorageSceneKey } from '../utils'
 
-interface State {
+export interface UserStoreState {
   token: string
   isLogged: boolean
 }
@@ -27,11 +27,11 @@ const userStorage: StateStorage = {
   },
 }
 
-const initialState: State = {
+const initialState: UserStoreState = {
   token: '',
   isLogged: false,
 }
-const userStore = create<State & Action>()(
+const userStore = create<UserStoreState & Action>()(
   immer(
     persist(
       (set, get) => ({
